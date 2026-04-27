@@ -1,0 +1,88 @@
+name: dbt-prod
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  dbt-prod:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.DBT_PROD_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DBT_PROD_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DBT_PROD_DBNAME }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DBT_PROD_HOST: localhost
+      DBT_PROD_PORT: 5432
+      DBT_PROD_USER: ${{ secrets.DBT_PROD_USER }}
+      DBT_PROD_PASSWORD: ${{ secrets.DBT_PROD_PASSWORD }}
+      DBT_PROD_DBNAME: ${{ secrets.DBT_PROD_DBNAME }}
+
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: ${{ secrets.DBT_PROD_USER }}
+      PGPASSWORD: ${{ secrets.DBT_PROD_PASSWORD }}
+      PGDATABASE: ${{ secrets.DBT_PROD_DBNAME }}
+
+      DBT_PROFILES_DIR: .
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-postgres psycopg2-binary
+
+      - name: Write dbt CI profile
+        run: |
+          cat > dbt/brainforge_assessment/profiles.yml <<'EOF'
+          brainforge_assessment:
+            target: prod
+            outputs:
+              dev:
+                type: postgres
+                host: "{{ env_var('DBT_PROD_HOST') }}"
+                user: "{{ env_var('DBT_PROD_USER') }}"
+                password: "{{ env_var('DBT_PROD_PASSWORD') }}"
+                port: "{{ env_var('DBT_PROD_PORT') | int }}"
+                dbname: "{{ env_var('DBT_PROD_DBNAME') }}"
+                schema: analytics_staging
+                threads: 4
+
+              prod:
+                type: postgres
+                host: "{{ env_var('DBT_PROD_HOST') }}"
+                user: "{{ env_var('DBT_PROD_USER') }}"
+                password: "{{ env_var('DBT_PROD_PASSWORD') }}"
+                port: "{{ env_var('DBT_PROD_PORT') | int }}"
+                dbname: "{{ env_var('DBT_PROD_DBNAME') }}"
+                schema: analytics
+                threads: 4
+          EOF
+
+      - name: Load sample raw data
+        run: python scripts/load_sample_raw.py
+
+      - name: Run dbt build in production
+        working-directory: dbt/brainforge_assessment
+        run: dbt build --target prod --profile brainforge_assessment

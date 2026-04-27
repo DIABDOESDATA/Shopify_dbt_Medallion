@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_order_line_items
+    description: "One row per order line item, flattened from the nested LINE_ITEMS array in stg_orders."
+    columns:
+      - name: line_item_id
+        tests:
+          - not_null
+
+  - name: int_product_variants
+    description: "One row per product variant, flattened from the nested VARIANTS array in stg_products."
+    columns:
+      - name: variant_id
+        tests:
+          - not_null

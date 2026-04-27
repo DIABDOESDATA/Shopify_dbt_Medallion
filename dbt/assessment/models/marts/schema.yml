@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: order_summary
+    description: "Final mart at one row per order. Combines order-level fields with customer attributes and rolled-up line-item / product metrics."
+    columns:
+      - name: order_id
+        description: "Primary key for the mart. Grain is one row per order."
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Customer identifier from orders.customer.id."
+        tests:
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+
+      - name: order_date
+        description: "Order creation timestamp."
+        tests:
+          - not_null
+
+      - name: total_amount
+        description: "Order total price from the source order record."
+
+      - name: line_item_count
+        description: "Count of distinct line items on the order."
+
+      - name: discount_amount
+        description: "Total discount amount on the order."

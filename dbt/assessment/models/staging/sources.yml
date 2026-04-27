@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    database: brainforge
+    schema: raw
+    tables:
+      - name: customers
+        description: "Raw customers table loaded by Airbyte from Shopify-style JSONL."
+      - name: orders
+        description: "Raw orders table loaded by Airbyte from Shopify-style JSONL."
+      - name: products
+        description: "Raw products table loaded by Airbyte from Shopify-style JSONL."

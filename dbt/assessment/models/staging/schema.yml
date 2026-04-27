@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Cleaned staging model for Shopify-style customers loaded by Airbyte."
+    columns:
+      - name: customer_id
+        description: "Primary customer identifier from the raw customers feed."
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_products
+    description: "Cleaned staging model for Shopify-style products loaded by Airbyte."
+    columns:
+      - name: product_id
+        description: "Primary product identifier from the raw products feed."
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_orders
+    description: "Cleaned staging model for Shopify-style orders loaded by Airbyte."
+    columns:
+      - name: order_id
+        description: "Primary order identifier from the raw orders feed."
+        tests:
+          - not_null
+          - unique
+      - name: created_at
+        description: "Order creation timestamp."
+        tests:
+          - not_null

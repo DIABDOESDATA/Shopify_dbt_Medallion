@@ -1,0 +1,23 @@
+select
+    "ID"::text as order_id,
+    "EMAIL"::text as email,
+    "CURRENCY"::text as currency,
+    "FINANCIAL_STATUS"::text as financial_status,
+    "FULFILLMENT_STATUS"::text as fulfillment_status,
+    "TOTAL_PRICE"::numeric as total_price,
+    "SUBTOTAL_PRICE"::numeric as subtotal_price,
+    "TOTAL_TAX"::numeric as total_tax,
+    "TOTAL_DISCOUNTS"::numeric as total_discounts,
+    "CUSTOMER" as customer_json,
+    "LINE_ITEMS" as line_items_json,
+    "REFUNDS" as refunds_json,
+    "BILLING_ADDRESS" as billing_address_json,
+    "SHIPPING_ADDRESS" as shipping_address_json,
+    "DISCOUNT_CODES" as discount_codes_json,
+    "SHIPPING_LINES" as shipping_lines_json,
+    "CREATED_AT"::timestamp as created_at,
+    "_PORTABLE_EXTRACTED"::timestamp as portable_extracted_at,
+    _airbyte_raw_id,
+    _airbyte_extracted_at,
+    _airbyte_generation_id
+from {{ source('raw', 'orders') }}

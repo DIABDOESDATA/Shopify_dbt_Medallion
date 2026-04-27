@@ -1,0 +1,89 @@
+name: dbt-staging
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  dbt-staging:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.DBT_STAGING_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DBT_STAGING_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DBT_STAGING_DBNAME }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DBT_STAGING_HOST: localhost
+      DBT_STAGING_PORT: 5432
+      DBT_STAGING_USER: ${{ secrets.DBT_STAGING_USER }}
+      DBT_STAGING_PASSWORD: ${{ secrets.DBT_STAGING_PASSWORD }}
+      DBT_STAGING_DBNAME: ${{ secrets.DBT_STAGING_DBNAME }}
+
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: ${{ secrets.DBT_STAGING_USER }}
+      PGPASSWORD: ${{ secrets.DBT_STAGING_PASSWORD }}
+      PGDATABASE: ${{ secrets.DBT_STAGING_DBNAME }}
+
+      DBT_PROFILES_DIR: .
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-postgres psycopg2-binary
+
+      - name: Write dbt CI profile
+        run: |
+          cat > dbt/brainforge_assessment/profiles.yml <<'EOF'
+          brainforge_assessment:
+            target: dev
+            outputs:
+              dev:
+                type: postgres
+                host: "{{ env_var('DBT_STAGING_HOST') }}"
+                user: "{{ env_var('DBT_STAGING_USER') }}"
+                password: "{{ env_var('DBT_STAGING_PASSWORD') }}"
+                port: "{{ env_var('DBT_STAGING_PORT') | int }}"
+                dbname: "{{ env_var('DBT_STAGING_DBNAME') }}"
+                schema: analytics_staging
+                threads: 4
+
+              prod:
+                type: postgres
+                host: "{{ env_var('DBT_STAGING_HOST') }}"
+                user: "{{ env_var('DBT_STAGING_USER') }}"
+                password: "{{ env_var('DBT_STAGING_PASSWORD') }}"
+                port: "{{ env_var('DBT_STAGING_PORT') | int }}"
+                dbname: "{{ env_var('DBT_STAGING_DBNAME') }}"
+                schema: analytics
+                threads: 4
+          EOF
+
+      - name: Load sample raw data
+        run: python scripts/load_sample_raw.py
+
+      - name: Run dbt build in staging
+        working-directory: dbt/brainforge_assessment
+        run: dbt build --target dev --profile brainforge_assessment
