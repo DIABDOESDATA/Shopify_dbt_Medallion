@@ -56,8 +56,8 @@ jobs:
 
       - name: Write dbt CI profile
         run: |
-          cat > dbt/brainforge_assessment/profiles.yml <<'EOF'
-          brainforge_assessment:
+          cat > dbt/assessment/profiles.yml <<'EOF'
+          assessment:
             target: dev
             outputs:
               dev:
@@ -85,5 +85,5 @@ jobs:
         run: python scripts/load_sample_raw.py
 
       - name: Run dbt build in staging
-        working-directory: dbt/brainforge_assessment
-        run: dbt build --target dev --profile brainforge_assessment
+        working-directory: dbt/assessment
+        run: dbt build --target dev --profile assessment
