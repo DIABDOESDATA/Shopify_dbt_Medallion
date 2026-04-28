@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: raw
-    database: brainforge
+    database: assessment
     schema: raw
     tables:
       - name: customers
